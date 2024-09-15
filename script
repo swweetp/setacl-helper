@@ -1,0 +1,18 @@
+#!/bin/bash
+
+declare CONFIG_FILE="/etc/setacl-helper.conf"
+
+if [ ! -f $CONFIG_FILE ]; then
+    echo "Configuration file not found: $CONFIG_FILE"
+    exit 1
+fi
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <key> <file>"
+    exit 1
+fi
+
+cat $CONFIG_FILE |
+    sed 's/#.*//' |
+    sed '/^[[:space:]]*$/d' |
+    awk -v key="$1" 'NF == 2 && $2 == key { print $1 }' |
+    xargs -i setfacl -m u:{}:$(stat -c %A $1 | cut -c 2-4) $1

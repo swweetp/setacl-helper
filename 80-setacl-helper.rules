@@ -1,0 +1,1 @@
+ACTION=="add|change", ENV{DEVNAME}!="", RUN+="/usr/lib/setacl-helper/script $env{DEVNAME}"
