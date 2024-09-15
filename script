@@ -11,8 +11,18 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-cat $CONFIG_FILE |
-    sed 's/#.*//' |
-    sed '/^[[:space:]]*$/d' |
-    awk -v key="$1" 'NF == 2 && $2 == key { print $1 }' |
-    xargs -i setfacl -m u:{}:$(stat -c %A $1 | cut -c 2-4) $1
+while read line; do
+    # Remove comments that # and after
+    line=$(echo "$line" | sed 's/#.*//')
+    # Skip empty lines
+    [[ -z "${line//[[:space:]]/}" ]] && continue
+    
+    device_path=$(echo "$line" | awk '{print $2}')
+    device_path=$(realpath "$device_path")
+    [ "$device_path" != "$1" ] && continue
+
+    allowed_user=$(echo "$line" | awk '{print $1}')
+    acl=$(stat -c %A "$1" | cut -c 2-4)
+    setfacl -m u:$allowed_user:$acl "$1"
+
+done < $CONFIG_FILE
